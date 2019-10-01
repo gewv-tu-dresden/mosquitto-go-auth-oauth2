@@ -47,6 +47,8 @@ github.com/hpcloud/tail v1.0.0/go.mod h1:ab1qPbhIpdTxEkNHXyeSf5vhxWSCs/tWer42PpO
 github.com/iegomez/mosquitto v1.6.4 h1:B75X1+cb6TVgvPiSqwUvbErw2kA+Is4KrXz5XlRU9m0=
 github.com/iegomez/mosquitto-go-auth v0.0.0-20190906214112-4fa788213f81 h1:ZmtqtNE35E02R4QMjuErhzjCMyMnXSZOzpCQHbtr/gM=
 github.com/iegomez/mosquitto-go-auth v0.0.0-20190906214112-4fa788213f81/go.mod h1:tLmxTedBEKUQEV5UuYBgwuDD8ylh4m5n1PaCpyoTZLI=
+github.com/iegomez/mosquitto-go-auth v0.0.0-20190927133804-5485ce1da03d h1:NaILrkHNSJ/OAAiSkcKmXq794JXc12VR8ERvBT/eZe0=
+github.com/iegomez/mosquitto-go-auth v0.0.0-20190927133804-5485ce1da03d/go.mod h1:tLmxTedBEKUQEV5UuYBgwuDD8ylh4m5n1PaCpyoTZLI=
 github.com/jacobsa/crypto v0.0.0-20180924003735-d95898ceee07/go.mod h1:LadVJg0XuawGk+8L1rYnIED8451UyNxEMdTWCEt5kmU=
 github.com/jacobsa/oglematchers v0.0.0-20150720000706-141901ea67cd/go.mod h1:TlmyIZDpGmwRoTWiakdr+HA1Tukze6C6XbRVidYq02M=
 github.com/jacobsa/oglemock v0.0.0-20150831005832-e94d794d06ff/go.mod h1:gJWba/XXGl0UoOmBQKRWCJdHrr3nE0T65t6ioaj3mLI=

@@ -11,15 +11,41 @@ import (
 func setupMockOAuthServer() (*httptest.Server, func()) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/userinfo", func(w http.ResponseWriter, r *http.Request) {
+		authHeader := r.Header.Get("Authorization")
+
+		if authHeader == "" {
+			http.Error(w, "Fail", 404)
+		}
+
 		// return info to the user in a json
 		w.Header().Set("Content-Type", "application/json")
+
+		if authHeader == "Bearer mock_token_normaluser" {
+			w.Write([]byte("{\"superuser\":false,\"topics\":{\"read\":[\"/test/topic/read/#\",\"/test/topic/writeread/1\"],\"write\":[\"/test/topic/write/+/db\",\"/test/topic/writeread/1\"]}}"))
+		}
+
 		w.Write([]byte("{\"superuser\":true,\"topics\":{\"read\":[\"/test/topic/read/#\",\"/test/topic/writeread/1\"],\"write\":[\"/test/topic/write/+/db\",\"/test/topic/writeread/1\"]}}"))
 	})
 
 	mux.HandleFunc("/token", func(w http.ResponseWriter, r *http.Request) {
-		// Should return acccess token back to the user
+		r.ParseForm()
+		password := r.Form.Get("password")
+		username := r.Form.Get("username")
+
+		if password == "" || password == "wrong_password" {
+			http.Error(w, "Fail", 404)
+		}
+
+		// normal user register
+		if username == "test_normaluser" {
+			// Should return acccess token back to the user
+			w.Header().Set("Content-Type", "application/x-www-form-urlencoded")
+			w.Write([]byte("access_token=mock_token_normaluser&scope=user&token_type=bearer&refresh_token=mock_refresh_token"))
+		}
+
+		// superuser register
 		w.Header().Set("Content-Type", "application/x-www-form-urlencoded")
-		w.Write([]byte("access_token=mock_token&scope=user&token_type=bearer&refresh_token=mock_refresh_token"))
+		w.Write([]byte("access_token=mock_token_superuser&scope=user&token_type=bearer&refresh_token=mock_refresh_token"))
 	})
 
 	server := httptest.NewServer(mux)
@@ -66,6 +92,16 @@ func TestGetUserPositiv(t *testing.T) {
 	}
 }
 
+func TestGetUserNegativ(t *testing.T) {
+	_, closeServer := createOAuthServer(t)
+	defer closeServer()
+
+	allowed := GetUser("wrong_user", "wrong_password")
+	if allowed {
+		t.Errorf("Negative GetUser() Response was positive!")
+	}
+}
+
 func TestGetSuperuserPositiv(t *testing.T) {
 	// first init plugin to create oauth server and client
 	_, closeServer := createOAuthServer(t)
@@ -75,6 +111,18 @@ func TestGetSuperuserPositiv(t *testing.T) {
 	allowed := GetSuperuser("test")
 	if !allowed {
 		t.Errorf("Positive GetSuperuser() Response was negative!")
+	}
+}
+
+func TestGetSuperuserNegativ(t *testing.T) {
+	// first init plugin to create oauth server and client
+	_, closeServer := createOAuthServer(t)
+	defer closeServer()
+
+	GetUser("test_normaluser", "test")
+	allowed := GetSuperuser("test_normaluser")
+	if allowed {
+		t.Errorf("Negative GetSuperuser() Response was positive!")
 	}
 }
 

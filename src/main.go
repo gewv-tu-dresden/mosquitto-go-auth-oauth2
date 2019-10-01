@@ -22,6 +22,8 @@ type userState struct {
 	readTopics        []string
 	writeTopics       []string
 	lastUserInfoUpate time.Time
+	createdAt         time.Time
+	updatedAt         time.Time
 }
 
 // type Topics struct {
@@ -154,6 +156,8 @@ func GetUser(username, password string) bool {
 		refreshToken: token.RefreshToken,
 		expiry:       token.Expiry,
 		superuser:    false,
+		createdAt:    time.Now(),
+		updatedAt:    time.Now(),
 	}
 
 	return true
