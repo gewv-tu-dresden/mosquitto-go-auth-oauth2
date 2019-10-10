@@ -3,12 +3,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.1] - 2019-10-10
+### Added
+
+- Use Cache
+- Auth with token
+
 ## [1.0] -  2019-10-02
 ### Added 
 
 - More tests
-- Use Cache
-- Authentificate with token
 
 ### Changed
 
