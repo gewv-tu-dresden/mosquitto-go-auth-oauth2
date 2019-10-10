@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file.
 
 - More tests
 - Use Cache
+- Authentificate with token
 
 ### Changed
 

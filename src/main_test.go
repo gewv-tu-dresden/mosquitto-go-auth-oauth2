@@ -14,7 +14,7 @@ func setupMockOAuthServer() (*httptest.Server, func()) {
 	mux.HandleFunc("/userinfo", func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
 
-		if authHeader == "" {
+		if authHeader == "" || authHeader == "Bearer wrong_token" {
 			http.Error(w, "Fail", 404)
 		}
 
@@ -101,6 +101,31 @@ func TestGetUserNegativ(t *testing.T) {
 	allowed := GetUser("wrong_user", "wrong_password")
 	if allowed {
 		t.Errorf("Negative GetUser() Response was positive!")
+	}
+}
+
+func TestGetUserWithTokenPositiv(t *testing.T) {
+	_, closeServer := createOAuthServer(t, 0)
+	defer closeServer()
+
+	allowed := GetUser("mock_token_superuser", "")
+	if !allowed {
+		t.Errorf("Positiv GetUser() Response with token was negative!")
+	}
+
+	superuser := GetSuperuser("mock_token_superuser")
+	if !superuser {
+		t.Errorf("Positiv GetSuperuser() Response with token was negative!")
+	}
+}
+
+func TestGetUserWithTokenNegative(t *testing.T) {
+	_, closeServer := createOAuthServer(t, 0)
+	defer closeServer()
+
+	allowed := GetUser("wrong_token", "")
+	if allowed {
+		t.Errorf("Negative GetUser() Response with token was positive!")
 	}
 }
 

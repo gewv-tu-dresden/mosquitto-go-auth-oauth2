@@ -25,6 +25,7 @@ type userState struct {
 	lastUserInfoUpate time.Time
 	createdAt         time.Time
 	updatedAt         time.Time
+	usernameIsToken   bool
 }
 
 // type Topics struct {
@@ -120,6 +121,51 @@ func cacheIsValid(cache *userState) bool {
 	return false
 }
 
+func createUserWithCredentials(username, password string) bool {
+	token, err := config.PasswordCredentialsToken(context.Background(), username, password)
+
+	if err != nil {
+		log.Println(err)
+		return false
+	}
+
+	userCache[username] = userState{
+		username:     username,
+		accessToken:  token.AccessToken,
+		refreshToken: token.RefreshToken,
+		expiry:       token.Expiry,
+		superuser:    false,
+		createdAt:    time.Now(),
+		updatedAt:    time.Unix(0, 0),
+	}
+
+	return true
+}
+
+func createUserWithToken(token string) bool {
+	info, err := getUserInfo(token)
+
+	if err != nil {
+		log.Println(err)
+		return false
+	}
+
+	userCache[token] = userState{
+		username:        token,
+		accessToken:     token,
+		usernameIsToken: true,
+		refreshToken:    "",
+		expiry:          time.Unix(0, 0),
+		superuser:       info.Superuser,
+		createdAt:       time.Now(),
+		updatedAt:       time.Now(),
+		readTopics:      info.Topics.Read,
+		writeTopics:     info.Topics.Write,
+	}
+
+	return true
+}
+
 func Init(authOpts map[string]string, logLevel log.Level) error {
 	// Initialize your plugin with the necessary options
 	log.SetLevel(logLevel)
@@ -172,24 +218,12 @@ func Init(authOpts map[string]string, logLevel log.Level) error {
 func GetUser(username, password string) bool {
 	// Get token for the credentials and verify the user
 	log.Infof("Checking user with oauth plugin.")
-	token, err := config.PasswordCredentialsToken(context.Background(), username, password)
-
-	if err != nil {
-		log.Println(err)
-		return false
+	if password == "" {
+		// If no password was delivered the username is interpreted as a token
+		return createUserWithToken(username)
 	}
 
-	userCache[username] = userState{
-		username:     username,
-		accessToken:  token.AccessToken,
-		refreshToken: token.RefreshToken,
-		expiry:       token.Expiry,
-		superuser:    false,
-		createdAt:    time.Now(),
-		updatedAt:    time.Unix(0, 0),
-	}
-
-	return true
+	return createUserWithCredentials(username, password)
 }
 
 func GetSuperuser(username string) bool {
