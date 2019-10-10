@@ -16,3 +16,10 @@ This plugin use oauth to authenticate and authorize users for a mqtt broker. Unf
 }
 
 ```
+
+We use Keycloak and there you can customize your userinfo.
+
+## How to test
+
+The simplest way is to use the delivered dockerfile and build your own image. You can use volumes to import the configurations or copy the files in the images while you build it.
+If you use volumes you have to remove the `COPY` commands from the Dockerfile.
