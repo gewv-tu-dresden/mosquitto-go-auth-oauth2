@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 
 	log "github.com/sirupsen/logrus"
@@ -56,7 +57,7 @@ func setupMockOAuthServer() (*httptest.Server, func()) {
 	}
 }
 
-func createOAuthServer(t *testing.T) (*httptest.Server, func()) {
+func createOAuthServer(t *testing.T, duration int) (*httptest.Server, func()) {
 	// start muck server
 	server, closeServer := setupMockOAuthServer()
 	log.Infof("Start Testserver on location %s", server.URL)
@@ -68,8 +69,9 @@ func createOAuthServer(t *testing.T) (*httptest.Server, func()) {
 	authOpts["oauth_client_secret"] = "clientSecret"
 	authOpts["oauth_token_url"] = server.URL + "/token"
 	authOpts["oauth_userinfo_url"] = server.URL + "/userinfo"
+	authOpts["oauth_cache_duration"] = strconv.Itoa(duration)
 
-	err := Init(authOpts, log.DebugLevel)
+	err := Init(authOpts, log.InfoLevel)
 	if err != nil {
 		t.Errorf("Failed to init plugin: %s", err)
 	}
@@ -77,13 +79,13 @@ func createOAuthServer(t *testing.T) (*httptest.Server, func()) {
 }
 
 func TestInit(t *testing.T) {
-	_, closeServer := createOAuthServer(t)
+	_, closeServer := createOAuthServer(t, 0)
 	defer closeServer()
 }
 
 func TestGetUserPositiv(t *testing.T) {
 	// first init plugin to create oauth server and client
-	_, closeServer := createOAuthServer(t)
+	_, closeServer := createOAuthServer(t, 0)
 	defer closeServer()
 
 	allowed := GetUser("test", "test")
@@ -93,7 +95,7 @@ func TestGetUserPositiv(t *testing.T) {
 }
 
 func TestGetUserNegativ(t *testing.T) {
-	_, closeServer := createOAuthServer(t)
+	_, closeServer := createOAuthServer(t, 0)
 	defer closeServer()
 
 	allowed := GetUser("wrong_user", "wrong_password")
@@ -104,7 +106,7 @@ func TestGetUserNegativ(t *testing.T) {
 
 func TestGetSuperuserPositiv(t *testing.T) {
 	// first init plugin to create oauth server and client
-	_, closeServer := createOAuthServer(t)
+	_, closeServer := createOAuthServer(t, 0)
 	defer closeServer()
 
 	GetUser("test", "test")
@@ -116,7 +118,7 @@ func TestGetSuperuserPositiv(t *testing.T) {
 
 func TestGetSuperuserNegativ(t *testing.T) {
 	// first init plugin to create oauth server and client
-	_, closeServer := createOAuthServer(t)
+	_, closeServer := createOAuthServer(t, 0)
 	defer closeServer()
 
 	GetUser("test_normaluser", "test")
@@ -128,7 +130,7 @@ func TestGetSuperuserNegativ(t *testing.T) {
 
 func TestCheckAclPositiv(t *testing.T) {
 	// first init plugin to create oauth server and client
-	_, closeServer := createOAuthServer(t)
+	_, closeServer := createOAuthServer(t, 0)
 	defer closeServer()
 
 	GetUser("test", "test")
@@ -148,5 +150,47 @@ func TestCheckAclPositiv(t *testing.T) {
 	allowed = CheckAcl("test", "/test/topic/writeread/1", "foo", 3)
 	if !allowed {
 		t.Errorf("Positive CheckAcl() Response was negative!")
+	}
+}
+
+func TestCheckAclNegative(t *testing.T) {
+	// first init plugin to create oauth server and client
+	_, closeServer := createOAuthServer(t, 0)
+	defer closeServer()
+
+	GetUser("test", "test")
+	// test read access
+	allowed := CheckAcl("test", "/test/wrong_topic/read/sensor", "foo", 1)
+	if allowed {
+		t.Errorf("Negative CheckAcl() Response was positive!")
+	}
+
+	// test write access
+	allowed = CheckAcl("test", "/test/wrong_topic/write/influx/db", "foo", 2)
+	if allowed {
+		t.Errorf("Negative CheckAcl() Response was negative!")
+	}
+
+	// test write access
+	allowed = CheckAcl("test", "/test/wrong_topic/writeread/1", "foo", 3)
+	if allowed {
+		t.Errorf("Negative CheckAcl() Response was negative!")
+	}
+}
+
+func TestGetUserinfoFromCache(t *testing.T) {
+	// first init plugin to create oauth server and client
+	_, closeServer := createOAuthServer(t, 10)
+	defer closeServer()
+
+	GetUser("test", "test")
+
+	// first request should get info from backend
+	GetSuperuser("test")
+
+	// second from cache
+	allowed := GetSuperuser("test")
+	if !allowed {
+		t.Errorf("Test cache check was positive")
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/iegomez/mosquitto-go-auth/common"
@@ -42,6 +43,7 @@ type UserInfo struct {
 var config oauth2.Config
 var userInfoURL string
 var userCache map[string]userState
+var cacheDuration time.Duration
 
 func getUserInfo(token string) (*UserInfo, error) {
 	info := UserInfo{}
@@ -61,8 +63,8 @@ func getUserInfo(token string) (*UserInfo, error) {
 	}
 	out, _ := json.Marshal(&info)
 
-	log.Infoln("Got userinfo from auth backend:")
-	log.Info(string(out))
+	log.Infoln("Got userinfo from auth backend")
+	log.Debug(string(out))
 
 	return &info, nil
 }
@@ -76,28 +78,44 @@ func isTopicInList(topicList []string, searchedTopic string) bool {
 	return false
 }
 
-func checkAccessToTopic(topic string, acc int, info *UserInfo) bool {
+func checkAccessToTopic(topic string, acc int, cache *userState) bool {
 	log.Debugf("Check for acl level %d", acc)
 
 	// check read access
 	if acc == 1 || acc == 4 {
-		res := isTopicInList(info.Topics.Read, topic)
+		res := isTopicInList(cache.readTopics, topic)
 		log.Debugf("ACL for read was %t", res)
 		return res
 	}
 
 	// check write
 	if acc == 2 {
-		res := isTopicInList(info.Topics.Write, topic)
+		res := isTopicInList(cache.writeTopics, topic)
 		log.Debugf("ACL for write was %t", res)
 		return res
 	}
 
 	// check for readwrite
 	if acc == 3 {
-		res := isTopicInList(info.Topics.Read, topic) && isTopicInList(info.Topics.Write, topic)
+		res := isTopicInList(cache.readTopics, topic) && isTopicInList(cache.writeTopics, topic)
 		log.Debugf("ACL for readwrite was %t", res)
 		return res
+	}
+	return false
+}
+
+func cacheIsValid(cache *userState) bool {
+	log.Infof("Cache Expiary: %s", cacheDuration)
+	log.Infof("Last Update: %s", cache.updatedAt)
+	log.Infof("Difference to now: %s", time.Now().Sub(cache.updatedAt))
+
+	// function tests if the cache of the user is still valid
+	if cacheDuration == 0 {
+		return false
+	}
+
+	if (time.Now().Sub(cache.updatedAt)) < cacheDuration {
+		return true
 	}
 	return false
 }
@@ -122,6 +140,17 @@ func Init(authOpts map[string]string, logLevel log.Level) error {
 	userInfoURL, ok = authOpts["oauth_userinfo_url"]
 	if !ok {
 		log.Panic("Got no userState endpoint for oauth plugin.")
+	}
+	cacheDurationSeconds, ok := authOpts["oauth_cache_duration"]
+	if ok {
+		durationInt, err := strconv.Atoi(cacheDurationSeconds)
+		if err != nil {
+			log.Panic("Got no valid cache duration for oauth plugin.")
+		}
+
+		cacheDuration = time.Duration(durationInt) * time.Second
+	} else {
+		cacheDuration = 0
 	}
 
 	config = oauth2.Config{
@@ -157,7 +186,7 @@ func GetUser(username, password string) bool {
 		expiry:       token.Expiry,
 		superuser:    false,
 		createdAt:    time.Now(),
-		updatedAt:    time.Now(),
+		updatedAt:    time.Unix(0, 0),
 	}
 
 	return true
@@ -173,15 +202,25 @@ func GetSuperuser(username string) bool {
 		return false
 	}
 
-	info, err := getUserInfo(cache.accessToken)
+	if !cacheIsValid(&cache) {
+		info, err := getUserInfo(cache.accessToken)
 
-	if err != nil {
-		log.Errorf("Failed to receive UserInfo for user %s: %s", username, err)
-		return false
+		if err != nil {
+			log.Errorf("Failed to receive UserInfo for user %s: %s", username, err)
+			return false
+		}
+
+		cache.superuser = info.Superuser
+		cache.readTopics = info.Topics.Read
+		cache.writeTopics = info.Topics.Write
+		cache.updatedAt = time.Now()
+	} else {
+		log.Infof("Get userinfo from cache")
 	}
 
-	log.Debugf("Check for superuser was %t", info.Superuser)
-	return info.Superuser
+	log.Debugf("Check for superuser was %t", cache.superuser)
+	userCache[username] = cache
+	return cache.superuser
 }
 
 func CheckAcl(username, topic, clientid string, acc int) bool {
@@ -194,14 +233,21 @@ func CheckAcl(username, topic, clientid string, acc int) bool {
 		return false
 	}
 
-	info, err := getUserInfo(cache.accessToken)
+	if !cacheIsValid(&cache) {
+		info, err := getUserInfo(cache.accessToken)
 
-	if err != nil {
-		log.Errorf("Failed to receive UserInfo for user %s: %s", username, err)
-		return false
+		if err != nil {
+			log.Errorf("Failed to receive UserInfo for user %s: %s", username, err)
+			return false
+		}
+
+		cache.superuser = info.Superuser
+		cache.readTopics = info.Topics.Read
+		cache.writeTopics = info.Topics.Write
+		cache.updatedAt = time.Now()
 	}
 
-	res := checkAccessToTopic(topic, acc, info)
+	res := checkAccessToTopic(topic, acc, &cache)
 	log.Debugf("ACL check was %t", res)
 	return res
 }
