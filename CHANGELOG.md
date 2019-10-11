@@ -5,6 +5,8 @@ All notable changes to this project will be documented in this file.
 ### Changed
 
 - the structur of the userinfo
+- show plugin version in logs
+- reduce info logs
 
 ## [1.1] - 2019-10-10
 ### Added
