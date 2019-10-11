@@ -34,11 +34,13 @@ type userState struct {
 // }
 
 type UserInfo struct {
-	Topics struct {
-		Read  []string `json:"read"`
-		Write []string `json:"write"`
-	} `json:"topics"`
-	Superuser bool `json:"superuser"`
+	MQTT struct {
+		Topics struct {
+			Read  []string `json:"read"`
+			Write []string `json:"write"`
+		} `json:"topics"`
+		Superuser bool `json:"superuser"`
+	} `json:"mqtt"`
 }
 
 var config oauth2.Config
@@ -156,11 +158,11 @@ func createUserWithToken(token string) bool {
 		usernameIsToken: true,
 		refreshToken:    "",
 		expiry:          time.Unix(0, 0),
-		superuser:       info.Superuser,
+		superuser:       info.MQTT.Superuser,
 		createdAt:       time.Now(),
 		updatedAt:       time.Now(),
-		readTopics:      info.Topics.Read,
-		writeTopics:     info.Topics.Write,
+		readTopics:      info.MQTT.Topics.Read,
+		writeTopics:     info.MQTT.Topics.Write,
 	}
 
 	return true
@@ -244,9 +246,9 @@ func GetSuperuser(username string) bool {
 			return false
 		}
 
-		cache.superuser = info.Superuser
-		cache.readTopics = info.Topics.Read
-		cache.writeTopics = info.Topics.Write
+		cache.superuser = info.MQTT.Superuser
+		cache.readTopics = info.MQTT.Topics.Read
+		cache.writeTopics = info.MQTT.Topics.Write
 		cache.updatedAt = time.Now()
 	} else {
 		log.Infof("Get userinfo from cache")
@@ -275,9 +277,9 @@ func CheckAcl(username, topic, clientid string, acc int) bool {
 			return false
 		}
 
-		cache.superuser = info.Superuser
-		cache.readTopics = info.Topics.Read
-		cache.writeTopics = info.Topics.Write
+		cache.superuser = info.MQTT.Superuser
+		cache.readTopics = info.MQTT.Topics.Read
+		cache.writeTopics = info.MQTT.Topics.Write
 		cache.updatedAt = time.Now()
 	}
 

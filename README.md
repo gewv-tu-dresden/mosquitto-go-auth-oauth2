@@ -8,11 +8,13 @@ This plugin use oauth to authenticate and authorize users for a mqtt broker. Unf
 
 ```json
 {
-    "topics": {
-        "read": ["sensor/+/rx"],
-        "write": ["application/#", "server_log/mqtt_broker/tx"],
+    "mqtt": {
+        "topics": {
+            "read": ["sensor/+/rx"],
+            "write": ["application/#", "server_log/mqtt_broker/tx"],
+        },
+        "superuser": false,
     },
-    "superuser": false,
 }
 
 ```

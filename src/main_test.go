@@ -22,10 +22,10 @@ func setupMockOAuthServer() (*httptest.Server, func()) {
 		w.Header().Set("Content-Type", "application/json")
 
 		if authHeader == "Bearer mock_token_normaluser" {
-			w.Write([]byte("{\"superuser\":false,\"topics\":{\"read\":[\"/test/topic/read/#\",\"/test/topic/writeread/1\"],\"write\":[\"/test/topic/write/+/db\",\"/test/topic/writeread/1\"]}}"))
+			w.Write([]byte("{\"mqtt\":{\"superuser\":false,\"topics\":{\"read\":[\"/test/topic/read/#\",\"/test/topic/writeread/1\"],\"write\":[\"/test/topic/write/+/db\",\"/test/topic/writeread/1\"]}}}"))
 		}
 
-		w.Write([]byte("{\"superuser\":true,\"topics\":{\"read\":[\"/test/topic/read/#\",\"/test/topic/writeread/1\"],\"write\":[\"/test/topic/write/+/db\",\"/test/topic/writeread/1\"]}}"))
+		w.Write([]byte("{\"mqtt\":{\"superuser\":true,\"topics\":{\"read\":[\"/test/topic/read/#\",\"/test/topic/writeread/1\"],\"write\":[\"/test/topic/write/+/db\",\"/test/topic/writeread/1\"]}}}"))
 	})
 
 	mux.HandleFunc("/token", func(w http.ResponseWriter, r *http.Request) {
