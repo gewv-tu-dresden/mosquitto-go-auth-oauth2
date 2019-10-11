@@ -47,6 +47,7 @@ var config oauth2.Config
 var userInfoURL string
 var userCache map[string]userState
 var cacheDuration time.Duration
+var version string
 
 func getUserInfo(token string) (*UserInfo, error) {
 	info := UserInfo{}
@@ -108,9 +109,9 @@ func checkAccessToTopic(topic string, acc int, cache *userState) bool {
 }
 
 func cacheIsValid(cache *userState) bool {
-	log.Infof("Cache Expiary: %s", cacheDuration)
-	log.Infof("Last Update: %s", cache.updatedAt)
-	log.Infof("Difference to now: %s", time.Now().Sub(cache.updatedAt))
+	log.Debugf("Cache Expiary: %s", cacheDuration)
+	log.Debugf("Last Update: %s", cache.updatedAt)
+	log.Debugf("Difference to now: %s", time.Now().Sub(cache.updatedAt))
 
 	// function tests if the cache of the user is still valid
 	if cacheDuration == 0 {
@@ -172,7 +173,10 @@ func Init(authOpts map[string]string, logLevel log.Level) error {
 	// Initialize your plugin with the necessary options
 	log.SetLevel(logLevel)
 
-	log.Infof("Plugin initialized!")
+	// Version of the plugin
+	version = "v1.1"
+
+	log.Infof("OAuth Plugin " + version + " initialized!")
 	clientID, ok := authOpts["oauth_client_id"]
 	if !ok {
 		log.Panic("Got no clientId for oauth plugin.")
@@ -289,7 +293,7 @@ func CheckAcl(username, topic, clientid string, acc int) bool {
 }
 
 func GetName() string {
-	return "OAuth Plugin"
+	return "OAuth Plugin " + version
 }
 
 func Halt() {
