@@ -4,10 +4,19 @@ name: default
 
 
 steps:
-- name: greeting
+- name: Test
   image: golang:1.12
   commands:
   - cd src  
-  - go build
   - go test
+
+- name: Build Container
+  image: plugins/docker
+  settings:
+    repo: karlTGA/mosquitto-go-auth-oauth2
+    username:
+      from_secret: docker_username
+    password:
+      from_secret: docker_password
+
   
