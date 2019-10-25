@@ -13,7 +13,7 @@ steps:
 - name: Build Container
   image: plugins/docker
   settings:
-    repo: karlTGA/mosquitto-go-auth-oauth2
+    repo: karltga/mosquitto-go-auth-oauth2
     username:
       from_secret: docker_username
     password:
