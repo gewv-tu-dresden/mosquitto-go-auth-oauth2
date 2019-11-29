@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+### Changed 
+
+- Build docker image now with the right tag
+
 ## [1.2]
 ### Added
 
