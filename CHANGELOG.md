@@ -1,7 +1,11 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [1.2]
+### Added
+
+- Refresh the access token automaticaly
+
 ### Changed
 
 - the structur of the userinfo

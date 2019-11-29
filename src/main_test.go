@@ -5,9 +5,14 @@ import (
 	"net/http/httptest"
 	"strconv"
 	"testing"
+	"time"
+	"os"
 
 	log "github.com/sirupsen/logrus"
 )
+
+// init environmental infos
+var CI bool
 
 func setupMockOAuthServer() (*httptest.Server, func()) {
 	mux := http.NewServeMux()
@@ -92,6 +97,9 @@ func createOAuthServer(t *testing.T, duration int) (*httptest.Server, func()) {
 }
 
 func TestInit(t *testing.T) {
+	CI = (os.Getenv("DRONE") == "true")
+	log.Infof("Run the test in the ci: %t", CI)
+
 	_, closeServer := createOAuthServer(t, 0)
 	defer closeServer()
 }
@@ -233,16 +241,48 @@ func TestGetUserinfoFromCache(t *testing.T) {
 	}
 }
 
-func TestTokenExpired(t *testing.T) {
+func TestRefreshExpiredAccessTokenCredentials(t *testing.T) {
+	// hard to test. when set the expired_at in the response to a
+	// short time, the client call the refresh request instant
+	// but nobody like long tests so the test only runs on ci
+	if CI {
+		// first init plugin to create oauth server and client
+		_, closeServer := createOAuthServer(t, 0)
+		defer closeServer()
 
+		GetUser("test_superuser", "test_superuser")
+
+
+		time.Sleep(65 * time.Second)
+
+		// second try after expired
+		allowed := GetSuperuser("test_superuser")
+		if !allowed {
+			t.Errorf("Test cache check was positive")
+		}
+	}
 }
 
-func TestRefreshExpiredAccessToken(t *testing.T) {
-	// first init plugin to create oauth server and client
-	_, closeServer := createOAuthServer(t, 10)
-	defer closeServer()
+func TestRefreshExpiredAccessTokenWithoutCrediantials(t *testing.T) {
+	// hard to test. when set the expired_at in the response to a
+	// short time, the client call the refresh request instant
+	// but nobody like long tests so the test only runs on ci
+	if CI {
+		// first init plugin to create oauth server and client
+		_, closeServer := createOAuthServer(t, 0)
+		defer closeServer()
 
-	GetUser("test_superuser", "test_superuser")
+		GetUser("mock_token_superuser", "")
 
 
+		time.Sleep(65 * time.Second)
+
+		// second try after expired
+		allowed := GetSuperuser("mock_token_superuser")
+		if !allowed {
+			t.Errorf("Test cache check was positive")
+		}
+	}
 }
+
+

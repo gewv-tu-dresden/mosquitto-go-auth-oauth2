@@ -16,9 +16,6 @@ type void struct{}
 
 type userState struct {
 	username          string
-	accessToken       string
-	refreshToken      string
-	expiry            time.Time
 	superuser         bool
 	readTopics        []string
 	writeTopics       []string
@@ -27,6 +24,7 @@ type userState struct {
 	updatedAt         time.Time
 	usernameIsToken   bool
 	client            *http.Client
+	token             *oauth2.Token
 }
 
 // type Topics struct {
@@ -122,17 +120,6 @@ func cacheIsValid(cache *userState) bool {
 	return false
 }
 
-func tokenNotExpired(expiredAt time.Time) bool {
-	log.Debugf("Token should expired at: %s", expiredAt.Format(time.RFC3339))
-
-	if (time.Now().Sub(expiredAt)) < 0 {
-		log.Debug("Token is still valid.")
-		return true
-	}
-
-	return false
-}
-
 func createUserWithCredentials(username, password string) bool {
 	token, err := config.PasswordCredentialsToken(context.Background(), username, password)
 
@@ -145,24 +132,22 @@ func createUserWithCredentials(username, password string) bool {
 
 	userCache[username] = userState{
 		username:     username,
-		accessToken:  token.AccessToken,
-		refreshToken: token.RefreshToken,
-		expiry:       token.Expiry,
 		superuser:    false,
 		createdAt:    time.Now(),
 		updatedAt:    time.Unix(0, 0),
 		client:       oauthClient,
+		token: 		  token,
 	}
 
 	return true
 }
 
-func createUserWithToken(token string) bool {
-	tokenSet := &oauth2.Token{
-		AccessToken: token,
+func createUserWithToken(accessToken string) bool {
+	token := &oauth2.Token{
+		AccessToken: accessToken,
 		TokenType: "Bearer",
 	}
-	client := config.Client(context.Background(), tokenSet)
+	client := config.Client(context.Background(), token)
 	info, err := getUserInfo(client)
 
 	if err != nil {
@@ -170,18 +155,16 @@ func createUserWithToken(token string) bool {
 		return false
 	}
 
-	userCache[token] = userState{
-		username:        token,
-		accessToken:     token,
+	userCache[accessToken] = userState{
+		username:        accessToken,
 		usernameIsToken: true,
-		refreshToken:    "",
-		expiry:          time.Unix(0, 0),
 		superuser:       info.MQTT.Superuser,
 		createdAt:       time.Now(),
 		updatedAt:       time.Now(),
 		readTopics:      info.MQTT.Topics.Read,
 		writeTopics:     info.MQTT.Topics.Write,
 		client:          client,
+		token:           token,
 	}
 
 	return true
@@ -261,8 +244,8 @@ func GetSuperuser(username string) bool {
 	}
 
 	if !cacheIsValid(&cache) {
-		if !tokenNotExpired(cache.expiry) {
-			log.Warningf("Token for user %s expired. Try to refresh.", username)
+		if !cache.token.Valid() {
+			log.Warningf("Token for user %s invalid. Try to refresh.", username)
 		}
 
 		info, err := getUserInfo(cache.client)
