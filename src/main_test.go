@@ -32,21 +32,34 @@ func setupMockOAuthServer() (*httptest.Server, func()) {
 		r.ParseForm()
 		password := r.Form.Get("password")
 		username := r.Form.Get("username")
+		refreshToken := r.Form.Get("refresh_token")
+		grantType := r.Form.Get("grant_type")
 
-		if password == "" || password == "wrong_password" {
+		if password == "wrong_password" {
 			http.Error(w, "Fail", 404)
+			return
+		}
+
+		if refreshToken != "" {
+			log.Infof("Got refresh request with token %s and grant_type %s.", refreshToken, grantType)
 		}
 
 		// normal user register
-		if username == "test_normaluser" {
+		if (username == "test_normaluser" && password == "test_normaluser") || refreshToken == "mock_refresh_token" {
 			// Should return acccess token back to the user
 			w.Header().Set("Content-Type", "application/x-www-form-urlencoded")
-			w.Write([]byte("access_token=mock_token_normaluser&scope=user&token_type=bearer&refresh_token=mock_refresh_token"))
+			w.Write([]byte("access_token=mock_token_normaluser&scope=user&token_type=bearer&refresh_token=mock_refresh_token&expires_in=0"))
+			return
 		}
 
 		// superuser register
-		w.Header().Set("Content-Type", "application/x-www-form-urlencoded")
-		w.Write([]byte("access_token=mock_token_superuser&scope=user&token_type=bearer&refresh_token=mock_refresh_token"))
+		if (username == "test_superuser" && password == "test_superuser") || refreshToken == "mock_refresh_token_superuser" {
+			w.Header().Set("Content-Type", "application/x-www-form-urlencoded")
+			w.Write([]byte("access_token=mock_token_superuser&scope=user&token_type=bearer&refresh_token=mock_refresh_token_superuser&expires_in=0"))
+			return
+		}
+	
+		http.Error(w, "Wrong credentials", 404)
 	})
 
 	server := httptest.NewServer(mux)
@@ -88,7 +101,7 @@ func TestGetUserPositiv(t *testing.T) {
 	_, closeServer := createOAuthServer(t, 0)
 	defer closeServer()
 
-	allowed := GetUser("test", "test")
+	allowed := GetUser("test_superuser", "test_superuser")
 	if !allowed {
 		t.Errorf("Positive GetUser() Response was negative!")
 	}
@@ -134,8 +147,8 @@ func TestGetSuperuserPositiv(t *testing.T) {
 	_, closeServer := createOAuthServer(t, 0)
 	defer closeServer()
 
-	GetUser("test", "test")
-	allowed := GetSuperuser("test")
+	GetUser("test_superuser", "test_superuser")
+	allowed := GetSuperuser("test_superuser")
 	if !allowed {
 		t.Errorf("Positive GetSuperuser() Response was negative!")
 	}
@@ -158,21 +171,21 @@ func TestCheckAclPositiv(t *testing.T) {
 	_, closeServer := createOAuthServer(t, 0)
 	defer closeServer()
 
-	GetUser("test", "test")
+	GetUser("test_superuser", "test_superuser")
 	// test read access
-	allowed := CheckAcl("test", "/test/topic/read/sensor", "foo", 1)
+	allowed := CheckAcl("test_superuser", "/test/topic/read/sensor", "foo", 1)
 	if !allowed {
 		t.Errorf("Positive CheckAcl() Response was negative!")
 	}
 
 	// test write access
-	allowed = CheckAcl("test", "/test/topic/write/influx/db", "foo", 2)
+	allowed = CheckAcl("test_superuser", "/test/topic/write/influx/db", "foo", 2)
 	if !allowed {
 		t.Errorf("Positive CheckAcl() Response was negative!")
 	}
 
 	// test write access
-	allowed = CheckAcl("test", "/test/topic/writeread/1", "foo", 3)
+	allowed = CheckAcl("test_superuser", "/test/topic/writeread/1", "foo", 3)
 	if !allowed {
 		t.Errorf("Positive CheckAcl() Response was negative!")
 	}
@@ -183,21 +196,21 @@ func TestCheckAclNegative(t *testing.T) {
 	_, closeServer := createOAuthServer(t, 0)
 	defer closeServer()
 
-	GetUser("test", "test")
+	GetUser("test_superuser", "test_superuser")
 	// test read access
-	allowed := CheckAcl("test", "/test/wrong_topic/read/sensor", "foo", 1)
+	allowed := CheckAcl("test_superuser", "/test/wrong_topic/read/sensor", "foo", 1)
 	if allowed {
 		t.Errorf("Negative CheckAcl() Response was positive!")
 	}
 
 	// test write access
-	allowed = CheckAcl("test", "/test/wrong_topic/write/influx/db", "foo", 2)
+	allowed = CheckAcl("test_superuser", "/test/wrong_topic/write/influx/db", "foo", 2)
 	if allowed {
 		t.Errorf("Negative CheckAcl() Response was negative!")
 	}
 
 	// test write access
-	allowed = CheckAcl("test", "/test/wrong_topic/writeread/1", "foo", 3)
+	allowed = CheckAcl("test_superuser", "/test/wrong_topic/writeread/1", "foo", 3)
 	if allowed {
 		t.Errorf("Negative CheckAcl() Response was negative!")
 	}
@@ -208,14 +221,28 @@ func TestGetUserinfoFromCache(t *testing.T) {
 	_, closeServer := createOAuthServer(t, 10)
 	defer closeServer()
 
-	GetUser("test", "test")
+	GetUser("test_superuser", "test_superuser")
 
 	// first request should get info from backend
-	GetSuperuser("test")
+	GetSuperuser("test_superuser")
 
 	// second from cache
-	allowed := GetSuperuser("test")
+	allowed := GetSuperuser("test_superuser")
 	if !allowed {
 		t.Errorf("Test cache check was positive")
 	}
+}
+
+func TestTokenExpired(t *testing.T) {
+
+}
+
+func TestRefreshExpiredAccessToken(t *testing.T) {
+	// first init plugin to create oauth server and client
+	_, closeServer := createOAuthServer(t, 10)
+	defer closeServer()
+
+	GetUser("test_superuser", "test_superuser")
+
+
 }

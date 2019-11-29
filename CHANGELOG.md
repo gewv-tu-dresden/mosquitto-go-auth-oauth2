@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 - the structur of the userinfo
 - show plugin version in logs
 - reduce info logs
+- use the offical oauth http client
 
 ## [1.1] - 2019-10-10
 ### Added

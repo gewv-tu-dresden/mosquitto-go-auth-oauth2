@@ -26,6 +26,7 @@ type userState struct {
 	createdAt         time.Time
 	updatedAt         time.Time
 	usernameIsToken   bool
+	client            *http.Client
 }
 
 // type Topics struct {
@@ -49,13 +50,10 @@ var userCache map[string]userState
 var cacheDuration time.Duration
 var version string
 
-func getUserInfo(token string) (*UserInfo, error) {
+func getUserInfo(client *http.Client) (*UserInfo, error) {
 	info := UserInfo{}
 
-	client := &http.Client{}
-
 	req, _ := http.NewRequest("GET", userInfoURL, nil)
-	req.Header.Add("Authorization", "Bearer "+token)
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
@@ -124,6 +122,17 @@ func cacheIsValid(cache *userState) bool {
 	return false
 }
 
+func tokenNotExpired(expiredAt time.Time) bool {
+	log.Debugf("Token should expired at: %s", expiredAt.Format(time.RFC3339))
+
+	if (time.Now().Sub(expiredAt)) < 0 {
+		log.Debug("Token is still valid.")
+		return true
+	}
+
+	return false
+}
+
 func createUserWithCredentials(username, password string) bool {
 	token, err := config.PasswordCredentialsToken(context.Background(), username, password)
 
@@ -131,6 +140,8 @@ func createUserWithCredentials(username, password string) bool {
 		log.Println(err)
 		return false
 	}
+
+	oauthClient := config.Client(context.Background(), token)
 
 	userCache[username] = userState{
 		username:     username,
@@ -140,13 +151,19 @@ func createUserWithCredentials(username, password string) bool {
 		superuser:    false,
 		createdAt:    time.Now(),
 		updatedAt:    time.Unix(0, 0),
+		client:       oauthClient,
 	}
 
 	return true
 }
 
 func createUserWithToken(token string) bool {
-	info, err := getUserInfo(token)
+	tokenSet := &oauth2.Token{
+		AccessToken: token,
+		TokenType: "Bearer",
+	}
+	client := config.Client(context.Background(), tokenSet)
+	info, err := getUserInfo(client)
 
 	if err != nil {
 		log.Println(err)
@@ -164,6 +181,7 @@ func createUserWithToken(token string) bool {
 		updatedAt:       time.Now(),
 		readTopics:      info.MQTT.Topics.Read,
 		writeTopics:     info.MQTT.Topics.Write,
+		client:          client,
 	}
 
 	return true
@@ -243,7 +261,11 @@ func GetSuperuser(username string) bool {
 	}
 
 	if !cacheIsValid(&cache) {
-		info, err := getUserInfo(cache.accessToken)
+		if !tokenNotExpired(cache.expiry) {
+			log.Warningf("Token for user %s expired. Try to refresh.", username)
+		}
+
+		info, err := getUserInfo(cache.client)
 
 		if err != nil {
 			log.Errorf("Failed to receive UserInfo for user %s: %s", username, err)
@@ -274,7 +296,7 @@ func CheckAcl(username, topic, clientid string, acc int) bool {
 	}
 
 	if !cacheIsValid(&cache) {
-		info, err := getUserInfo(cache.accessToken)
+		info, err := getUserInfo(cache.client)
 
 		if err != nil {
 			log.Errorf("Failed to receive UserInfo for user %s: %s", username, err)
