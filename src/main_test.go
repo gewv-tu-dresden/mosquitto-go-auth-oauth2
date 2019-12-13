@@ -274,7 +274,6 @@ func TestRefreshExpiredAccessTokenWithoutCrediantials(t *testing.T) {
 
 		GetUser("mock_token_superuser", "")
 
-
 		time.Sleep(65 * time.Second)
 
 		// second try after expired
