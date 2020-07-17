@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/iegomez/mosquitto-go-auth/common"
+	"github.com/iegomez/mosquitto-go-auth/backends"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 )
@@ -71,7 +71,7 @@ func getUserInfo(client *http.Client) (*UserInfo, error) {
 
 func isTopicInList(topicList []string, searchedTopic string) bool {
 	for _, topicFromList := range topicList {
-		if common.TopicsMatch(topicFromList, searchedTopic) {
+		if backends.TopicsMatch(topicFromList, searchedTopic) {
 			return true
 		}
 	}
@@ -131,12 +131,12 @@ func createUserWithCredentials(username, password string) bool {
 	oauthClient := config.Client(context.Background(), token)
 
 	userCache[username] = userState{
-		username:     username,
-		superuser:    false,
-		createdAt:    time.Now(),
-		updatedAt:    time.Unix(0, 0),
-		client:       oauthClient,
-		token: 		  token,
+		username:  username,
+		superuser: false,
+		createdAt: time.Now(),
+		updatedAt: time.Unix(0, 0),
+		client:    oauthClient,
+		token:     token,
 	}
 
 	return true
@@ -145,7 +145,7 @@ func createUserWithCredentials(username, password string) bool {
 func createUserWithToken(accessToken string) bool {
 	token := &oauth2.Token{
 		AccessToken: accessToken,
-		TokenType: "Bearer",
+		TokenType:   "Bearer",
 	}
 	client := config.Client(context.Background(), token)
 	info, err := getUserInfo(client)
@@ -303,4 +303,8 @@ func GetName() string {
 
 func Halt() {
 	// Do whatever cleanup is needed.
+}
+
+func main() {
+	// pass
 }
