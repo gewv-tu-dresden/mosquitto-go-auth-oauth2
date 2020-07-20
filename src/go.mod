@@ -1,6 +1,6 @@
 module mosquitto-go-auth-oauth2
 
-go 1.14
+go 1.12
 
 require (
 	github.com/iegomez/mosquitto-go-auth v0.0.0-20200714032237-7dd3f5a895d8

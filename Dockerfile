@@ -5,7 +5,7 @@ FROM debian:stable-slim as builder
 #Change them for your needs.
 ENV MOSQUITTO_VERSION=1.6.9
 ENV PLUGIN_VERSION=1.0.0
-ENV GO_VERSION=1.14
+ENV GO_VERSION=1.12
 
 WORKDIR /app
 
