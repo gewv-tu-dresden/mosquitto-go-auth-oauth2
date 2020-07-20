@@ -4,7 +4,7 @@ name: default
 
 steps:
   - name: Test
-    image: golang:1.13.8
+    image: golang:1.13
     commands:
       - cd src
       - go test
