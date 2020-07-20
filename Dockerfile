@@ -56,6 +56,7 @@ COPY --from=builder /app/mosquitto/ /mosquitto/
 COPY --from=builder /app/go-auth.so /mosquitto/go-auth.so
 COPY --from=builder /usr/local/sbin/mosquitto /usr/sbin/mosquitto
 COPY --from=builder /app/mosquitto-go-auth-oauth2.so /mosquitto/mosquitto-go-auth-oauth2.so
+COPY --from=builder /app/pw-gen/pw.go /mosquitto/pw.go
 
 #Uncomment to copy your custom confs (change accordingly) directly when building the image.
 #Leave commented if you want to mount a volume for these (see docker-compose.yml).
