@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/iegomez/mosquitto-go-auth/backends"
+	"github.com/iegomez/mosquitto-go-auth/common"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 )
@@ -71,7 +71,7 @@ func getUserInfo(client *http.Client) (*UserInfo, error) {
 
 func isTopicInList(topicList []string, searchedTopic string) bool {
 	for _, topicFromList := range topicList {
-		if backends.TopicsMatch(topicFromList, searchedTopic) {
+		if common.TopicsMatch(topicFromList, searchedTopic) {
 			return true
 		}
 	}
