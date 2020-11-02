@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/iegomez/mosquitto-go-auth/common"
@@ -292,7 +293,11 @@ func CheckAcl(username, topic, clientid string, acc int) bool {
 		cache.updatedAt = time.Now()
 	}
 
-	res := checkAccessToTopic(topic, acc, &cache)
+	// replace fields in topic with username or clientid
+	topicUsernameReplaced := strings.ReplaceAll(topic, "%u", username)
+	topicClientIdReplaced := strings.ReplaceAll(topicUsernameReplaced, "%c", clientid)
+
+	res := checkAccessToTopic(topicClientIdReplaced, acc, &cache)
 	log.Debugf("ACL check was %t", res)
 	return res
 }

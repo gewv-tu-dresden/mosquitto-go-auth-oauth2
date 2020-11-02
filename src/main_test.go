@@ -3,10 +3,10 @@ package main
 import (
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strconv"
 	"testing"
 	"time"
-	"os"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -27,7 +27,7 @@ func setupMockOAuthServer() (*httptest.Server, func()) {
 		w.Header().Set("Content-Type", "application/json")
 
 		if authHeader == "Bearer mock_token_normaluser" {
-			w.Write([]byte("{\"mqtt\":{\"superuser\":false,\"topics\":{\"read\":[\"/test/topic/read/#\",\"/test/topic/writeread/1\"],\"write\":[\"/test/topic/write/+/db\",\"/test/topic/writeread/1\"]}}}"))
+			w.Write([]byte("{\"mqtt\":{\"superuser\":false,\"topics\":{\"read\":[\"/test/topic/read/#\",\"/test/topic/writeread/1\",\"/test/topic/pattern/username/test_normaluser\",\"/test/topic/pattern/clientid/foo\"],\"write\":[\"/test/topic/write/+/db\",\"/test/topic/writeread/1\"]}}}"))
 		}
 
 		w.Write([]byte("{\"mqtt\":{\"superuser\":true,\"topics\":{\"read\":[\"/test/topic/read/#\",\"/test/topic/writeread/1\"],\"write\":[\"/test/topic/write/+/db\",\"/test/topic/writeread/1\"]}}}"))
@@ -50,7 +50,7 @@ func setupMockOAuthServer() (*httptest.Server, func()) {
 		}
 
 		// normal user register
-		if (username == "test_normaluser" && password == "test_normaluser") || refreshToken == "mock_refresh_token" {
+		if (username == "test_normaluser" && password == "test_normaluser") || (username == "test_pattern_user") || refreshToken == "mock_refresh_token" {
 			// Should return acccess token back to the user
 			w.Header().Set("Content-Type", "application/x-www-form-urlencoded")
 			w.Write([]byte("access_token=mock_token_normaluser&scope=user&token_type=bearer&refresh_token=mock_refresh_token&expires_in=0"))
@@ -63,7 +63,7 @@ func setupMockOAuthServer() (*httptest.Server, func()) {
 			w.Write([]byte("access_token=mock_token_superuser&scope=user&token_type=bearer&refresh_token=mock_refresh_token_superuser&expires_in=0"))
 			return
 		}
-	
+
 		http.Error(w, "Wrong credentials", 404)
 	})
 
@@ -252,7 +252,6 @@ func TestRefreshExpiredAccessTokenCredentials(t *testing.T) {
 
 		GetUser("test_superuser", "test_superuser")
 
-
 		time.Sleep(65 * time.Second)
 
 		// second try after expired
@@ -284,4 +283,22 @@ func TestRefreshExpiredAccessTokenWithoutCrediantials(t *testing.T) {
 	}
 }
 
+func TestACLWithPatternSubstitution(t *testing.T) {
+	// first init plugin to create oauth server and client
+	_, closeServer := createOAuthServer(t, 0)
+	defer closeServer()
 
+	GetUser("test_normaluser", "test_normaluser")
+
+	// test pattern with %u
+	allowed := CheckAcl("test_normaluser", "/test/topic/pattern/username/%u", "foo", 1)
+	if !allowed {
+		t.Errorf("Topic check with username replacement failed.")
+	}
+
+	// test pattern with %c
+	allowed_2 := CheckAcl("test_normaluser", "/test/topic/pattern/clientid/%c", "foo", 1)
+	if !allowed_2 {
+		t.Errorf("Topic check with clientid replacement failed.")
+	}
+}

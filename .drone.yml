@@ -11,6 +11,8 @@ steps:
 
   - name: Build Container
     image: plugins/docker
+    when:
+      branch: master
     settings:
       repo: karltga/mosquitto-go-auth-oauth2
       username:
