@@ -71,35 +71,37 @@ func getUserInfo(client *http.Client) (*UserInfo, error) {
 	return &info, nil
 }
 
-func isTopicInList(topicList []string, searchedTopic string) bool {
+func isTopicInList(topicList []string, searchedTopic string, username string, clientid string) bool {
+	replacer := strings.NewReplacer("%u", username, "%c", clientid)
+
 	for _, topicFromList := range topicList {
-		if common.TopicsMatch(topicFromList, searchedTopic) {
+		if common.TopicsMatch(replacer.Replace(topicFromList), searchedTopic) {
 			return true
 		}
 	}
 	return false
 }
 
-func checkAccessToTopic(topic string, acc int, cache *userState) bool {
+func checkAccessToTopic(topic string, acc int, cache *userState, username string, clientid string) bool {
 	log.Debugf("Check for acl level %d", acc)
 
 	// check read access
 	if acc == 1 || acc == 4 {
-		res := isTopicInList(cache.readTopics, topic)
+		res := isTopicInList(cache.readTopics, topic, username, clientid)
 		log.Debugf("ACL for read was %t", res)
 		return res
 	}
 
 	// check write
 	if acc == 2 {
-		res := isTopicInList(cache.writeTopics, topic)
+		res := isTopicInList(cache.writeTopics, topic, username, clientid)
 		log.Debugf("ACL for write was %t", res)
 		return res
 	}
 
 	// check for readwrite
 	if acc == 3 {
-		res := isTopicInList(cache.readTopics, topic) && isTopicInList(cache.writeTopics, topic)
+		res := isTopicInList(cache.readTopics, topic, username, clientid) && isTopicInList(cache.writeTopics, topic, username, clientid)
 		log.Debugf("ACL for readwrite was %t", res)
 		return res
 	}
@@ -301,11 +303,7 @@ func CheckAcl(username, topic, clientid string, acc int) bool {
 		cache.updatedAt = time.Now()
 	}
 
-	// replace fields in topic with username or clientid
-	topicUsernameReplaced := strings.ReplaceAll(topic, "%u", username)
-	topicClientIdReplaced := strings.ReplaceAll(topicUsernameReplaced, "%c", clientid)
-
-	res := checkAccessToTopic(topicClientIdReplaced, acc, &cache)
+	res := checkAccessToTopic(topic, acc, &cache, username, clientid)
 	log.Debugf("ACL check was %t", res)
 	return res
 }

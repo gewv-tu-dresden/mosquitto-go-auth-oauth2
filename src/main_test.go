@@ -27,7 +27,7 @@ func setupMockOAuthServer() (*httptest.Server, func()) {
 		w.Header().Set("Content-Type", "application/json")
 
 		if authHeader == "Bearer mock_token_normaluser" {
-			w.Write([]byte("{\"mqtt\":{\"superuser\":false,\"topics\":{\"read\":[\"/test/topic/read/#\",\"/test/topic/writeread/1\",\"/test/topic/pattern/username/test_normaluser\",\"/test/topic/pattern/clientid/foo\"],\"write\":[\"/test/topic/write/+/db\",\"/test/topic/writeread/1\"]}}}"))
+			w.Write([]byte("{\"mqtt\":{\"superuser\":false,\"topics\":{\"read\":[\"/test/topic/read/#\",\"/test/topic/writeread/1\",\"/test/topic/pattern/username/%u\",\"/test/topic/pattern/clientid/%c\"],\"write\":[\"/test/topic/write/+/db\",\"/test/topic/writeread/1\"]}}}"))
 		}
 
 		w.Write([]byte("{\"mqtt\":{\"superuser\":true,\"topics\":{\"read\":[\"/test/topic/read/#\",\"/test/topic/writeread/1\"],\"write\":[\"/test/topic/write/+/db\",\"/test/topic/writeread/1\"]}}}"))
@@ -306,19 +306,19 @@ func TestRefreshExpiredAccessTokenWithoutCrediantials(t *testing.T) {
 
 func TestACLWithPatternSubstitution(t *testing.T) {
 	// first init plugin to create oauth server and client
-	_, closeServer := createOAuthServer(t, 0)
+	_, closeServer := createOAuthServer(t, 0, "all")
 	defer closeServer()
 
 	GetUser("test_normaluser", "test_normaluser")
 
 	// test pattern with %u
-	allowed := CheckAcl("test_normaluser", "/test/topic/pattern/username/%u", "foo", 1)
+	allowed := CheckAcl("test_normaluser", "/test/topic/pattern/username/test_normaluser", "foo", 1)
 	if !allowed {
 		t.Errorf("Topic check with username replacement failed.")
 	}
 
 	// test pattern with %c
-	allowed_2 := CheckAcl("test_normaluser", "/test/topic/pattern/clientid/%c", "foo", 1)
+	allowed_2 := CheckAcl("test_normaluser", "/test/topic/pattern/clientid/foo", "foo", 1)
 	if !allowed_2 {
 		t.Errorf("Topic check with clientid replacement failed.")
 
