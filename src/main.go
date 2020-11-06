@@ -48,6 +48,7 @@ var userInfoURL string
 var userCache map[string]userState
 var cacheDuration time.Duration
 var version string
+var scopesSplitted []string
 
 func getUserInfo(client *http.Client) (*UserInfo, error) {
 	info := UserInfo{}
@@ -176,7 +177,7 @@ func Init(authOpts map[string]string, logLevel log.Level) error {
 	log.SetLevel(logLevel)
 
 	// Version of the plugin
-	version = "v1.1"
+	version = "v1.2"
 
 	log.Infof("OAuth Plugin " + version + " initialized!")
 	clientID, ok := authOpts["oauth_client_id"]
@@ -206,11 +207,18 @@ func Init(authOpts map[string]string, logLevel log.Level) error {
 	} else {
 		cacheDuration = 0
 	}
+	scopes, ok := authOpts["oauth_scopes"]
+	if ok {
+		scopesSplitted = strings.Split(strings.Replace(scopes, " ", "", -1), ",")
+
+	} else {
+		scopesSplitted = []string{"all"}
+	}
 
 	config = oauth2.Config{
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
-		Scopes:       []string{"all"},
+		Scopes:       scopesSplitted,
 		RedirectURL:  "",
 		Endpoint: oauth2.Endpoint{
 			TokenURL: tokenURL,
@@ -304,6 +312,10 @@ func CheckAcl(username, topic, clientid string, acc int) bool {
 
 func GetName() string {
 	return "OAuth Plugin " + version
+}
+
+func GetScopes() []string {
+	return config.Scopes
 }
 
 func Halt() {
