@@ -3,10 +3,10 @@ package main
 import (
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strconv"
 	"testing"
 	"time"
-	"os"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -63,7 +63,7 @@ func setupMockOAuthServer() (*httptest.Server, func()) {
 			w.Write([]byte("access_token=mock_token_superuser&scope=user&token_type=bearer&refresh_token=mock_refresh_token_superuser&expires_in=0"))
 			return
 		}
-	
+
 		http.Error(w, "Wrong credentials", 404)
 	})
 
@@ -75,7 +75,7 @@ func setupMockOAuthServer() (*httptest.Server, func()) {
 	}
 }
 
-func createOAuthServer(t *testing.T, duration int) (*httptest.Server, func()) {
+func createOAuthServer(t *testing.T, duration int, scopes string) (*httptest.Server, func()) {
 	// start muck server
 	server, closeServer := setupMockOAuthServer()
 	log.Infof("Start Testserver on location %s", server.URL)
@@ -88,6 +88,7 @@ func createOAuthServer(t *testing.T, duration int) (*httptest.Server, func()) {
 	authOpts["oauth_token_url"] = server.URL + "/token"
 	authOpts["oauth_userinfo_url"] = server.URL + "/userinfo"
 	authOpts["oauth_cache_duration"] = strconv.Itoa(duration)
+	authOpts["oauth_scopes"] = scopes
 
 	err := Init(authOpts, log.InfoLevel)
 	if err != nil {
@@ -96,17 +97,37 @@ func createOAuthServer(t *testing.T, duration int) (*httptest.Server, func()) {
 	return server, closeServer
 }
 
+func Equal(a, b []string) bool {
+
+	// If one is nil, the other must also be nil.
+	if (a == nil) != (b == nil) {
+		return false
+	}
+
+	if len(a) != len(b) {
+		return false
+	}
+
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+
+	return true
+}
+
 func TestInit(t *testing.T) {
 	CI = (os.Getenv("DRONE") == "true")
 	log.Infof("Run the test in the ci: %t", CI)
 
-	_, closeServer := createOAuthServer(t, 0)
+	_, closeServer := createOAuthServer(t, 0, "all")
 	defer closeServer()
 }
 
 func TestGetUserPositiv(t *testing.T) {
 	// first init plugin to create oauth server and client
-	_, closeServer := createOAuthServer(t, 0)
+	_, closeServer := createOAuthServer(t, 0, "all")
 	defer closeServer()
 
 	allowed := GetUser("test_superuser", "test_superuser")
@@ -116,7 +137,7 @@ func TestGetUserPositiv(t *testing.T) {
 }
 
 func TestGetUserNegativ(t *testing.T) {
-	_, closeServer := createOAuthServer(t, 0)
+	_, closeServer := createOAuthServer(t, 0, "all")
 	defer closeServer()
 
 	allowed := GetUser("wrong_user", "wrong_password")
@@ -126,7 +147,7 @@ func TestGetUserNegativ(t *testing.T) {
 }
 
 func TestGetUserWithTokenPositiv(t *testing.T) {
-	_, closeServer := createOAuthServer(t, 0)
+	_, closeServer := createOAuthServer(t, 0, "all")
 	defer closeServer()
 
 	allowed := GetUser("mock_token_superuser", "")
@@ -141,7 +162,7 @@ func TestGetUserWithTokenPositiv(t *testing.T) {
 }
 
 func TestGetUserWithTokenNegative(t *testing.T) {
-	_, closeServer := createOAuthServer(t, 0)
+	_, closeServer := createOAuthServer(t, 0, "all")
 	defer closeServer()
 
 	allowed := GetUser("wrong_token", "")
@@ -152,7 +173,7 @@ func TestGetUserWithTokenNegative(t *testing.T) {
 
 func TestGetSuperuserPositiv(t *testing.T) {
 	// first init plugin to create oauth server and client
-	_, closeServer := createOAuthServer(t, 0)
+	_, closeServer := createOAuthServer(t, 0, "all")
 	defer closeServer()
 
 	GetUser("test_superuser", "test_superuser")
@@ -164,7 +185,7 @@ func TestGetSuperuserPositiv(t *testing.T) {
 
 func TestGetSuperuserNegativ(t *testing.T) {
 	// first init plugin to create oauth server and client
-	_, closeServer := createOAuthServer(t, 0)
+	_, closeServer := createOAuthServer(t, 0, "all")
 	defer closeServer()
 
 	GetUser("test_normaluser", "test")
@@ -176,7 +197,7 @@ func TestGetSuperuserNegativ(t *testing.T) {
 
 func TestCheckAclPositiv(t *testing.T) {
 	// first init plugin to create oauth server and client
-	_, closeServer := createOAuthServer(t, 0)
+	_, closeServer := createOAuthServer(t, 0, "all")
 	defer closeServer()
 
 	GetUser("test_superuser", "test_superuser")
@@ -201,7 +222,7 @@ func TestCheckAclPositiv(t *testing.T) {
 
 func TestCheckAclNegative(t *testing.T) {
 	// first init plugin to create oauth server and client
-	_, closeServer := createOAuthServer(t, 0)
+	_, closeServer := createOAuthServer(t, 0, "all")
 	defer closeServer()
 
 	GetUser("test_superuser", "test_superuser")
@@ -226,7 +247,7 @@ func TestCheckAclNegative(t *testing.T) {
 
 func TestGetUserinfoFromCache(t *testing.T) {
 	// first init plugin to create oauth server and client
-	_, closeServer := createOAuthServer(t, 10)
+	_, closeServer := createOAuthServer(t, 10, "all")
 	defer closeServer()
 
 	GetUser("test_superuser", "test_superuser")
@@ -247,11 +268,10 @@ func TestRefreshExpiredAccessTokenCredentials(t *testing.T) {
 	// but nobody like long tests so the test only runs on ci
 	if CI {
 		// first init plugin to create oauth server and client
-		_, closeServer := createOAuthServer(t, 0)
+		_, closeServer := createOAuthServer(t, 0, "all")
 		defer closeServer()
 
 		GetUser("test_superuser", "test_superuser")
-
 
 		time.Sleep(65 * time.Second)
 
@@ -269,7 +289,7 @@ func TestRefreshExpiredAccessTokenWithoutCrediantials(t *testing.T) {
 	// but nobody like long tests so the test only runs on ci
 	if CI {
 		// first init plugin to create oauth server and client
-		_, closeServer := createOAuthServer(t, 0)
+		_, closeServer := createOAuthServer(t, 0, "all")
 		defer closeServer()
 
 		GetUser("mock_token_superuser", "")
@@ -284,4 +304,16 @@ func TestRefreshExpiredAccessTokenWithoutCrediantials(t *testing.T) {
 	}
 }
 
+func TestSetScopePerOption(t *testing.T) {
+	// first init plugin to create oauth server and client
+	_, closeServer := createOAuthServer(t, 0, "scope_1,scope_2")
+	defer closeServer()
 
+	// set the scope per envs
+	GetUser("test_normaluser", "test_normaluser")
+
+	scopes := GetScopes()
+	if !Equal(scopes, []string{"scope_1", "scope_2"}) {
+		t.Errorf("Receive different scopes then configed.")
+	}
+}
