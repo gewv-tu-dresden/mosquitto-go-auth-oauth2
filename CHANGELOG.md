@@ -2,7 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [1.4]
+
+### Added
+
+- Set the oauth2 scopes per config file
 
 ## [1.3]
 
