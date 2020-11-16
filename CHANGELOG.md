@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5]
+
+### Added
+
+- Possible to use %u and %c in the topics from the auth server
+
 ## [1.4]
 
 ### Added
