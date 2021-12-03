@@ -1,10 +1,11 @@
+#Set mosquitto and plugin versions.
+#Change them as per your needs.
+ARG MOSQUITTO_VERSION=2.0.12
+ARG PLUGIN_VERSION=1.8.2
+
 #Use debian:stable-slim as a builder and then copy everything.
 FROM debian:stable-slim as builder
-
-#Set mosquitto and plugin versions.
-#Change them for your needs.
-ENV MOSQUITTO_VERSION=2.0.12
-ENV PLUGIN_VERSION=1.8.2
+ARG MOSQUITTO_VERSION
 
 WORKDIR /app
 
@@ -21,13 +22,13 @@ RUN cd mosquitto-${MOSQUITTO_VERSION} && make CFLAGS="-Wall -O2 -I/build/lws/inc
 # Use golang:latest as a builder for the Mosquitto Go Auth plugin.
 FROM --platform=$BUILDPLATFORM golang:latest AS go_auth_builder
 
+ARG PLUGIN_VERSION
 ENV CGO_CFLAGS="-I/usr/local/include -fPIC"
 ENV CGO_LDFLAGS="-shared -Wl,-unresolved-symbols=ignore-all"
 ENV CGO_ENABLED=1
 
 # Install TARGETPLATFORM parser to translate its value to GOOS, GOARCH, and GOARM
 COPY --from=tonistiigi/xx:golang / /
-RUN go env
 
 RUN apt update && apt install -y gcc-aarch64-linux-gnu libc6-dev-arm64-cross
 
