@@ -5,7 +5,6 @@ FROM debian:stable-slim as builder
 #Change them for your needs.
 ENV MOSQUITTO_VERSION=2.0.12
 ENV PLUGIN_VERSION=1.8.2
-ENV GO_VERSION=1.17.3
 
 WORKDIR /app
 
@@ -36,7 +35,7 @@ WORKDIR /app
 COPY --from=builder /usr/local/include/ /usr/local/include/
 
 #Get the plugin.
-RUN wget https://github.com/iegomez/mosquitto-go-auth/archive/refs/tags/1.8.2.tar.gz \
+RUN wget https://github.com/iegomez/mosquitto-go-auth/archive/refs/tags/${PLUGIN_VERSION}.tar.gz \
     && ls -l \
     && tar xvf *.tar.gz --strip-components=1 \
     && rm -Rf go*.tar.gz \
