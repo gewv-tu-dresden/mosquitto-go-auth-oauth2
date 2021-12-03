@@ -20,7 +20,7 @@ RUN tar xzvf mosquitto-${MOSQUITTO_VERSION}.tar.gz && rm mosquitto-${MOSQUITTO_V
 RUN cd mosquitto-${MOSQUITTO_VERSION} && make CFLAGS="-Wall -O2 -I/build/lws/include" LDFLAGS="-L/build/lws/lib" WITH_WEBSOCKETS=yes && make install && cd ..
 
 # Use golang:latest as a builder for the Mosquitto Go Auth plugin.
-FROM --platform=$BUILDPLATFORM golang:latest AS go_auth_builder
+FROM golang:latest AS go_auth_builder
 
 ARG PLUGIN_VERSION
 ENV CGO_CFLAGS="-I/usr/local/include -fPIC"
