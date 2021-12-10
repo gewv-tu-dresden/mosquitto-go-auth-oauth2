@@ -14,7 +14,7 @@ steps:
     when:
       branch: master
     settings:
-      repo: karltga/mosquitto-go-auth-oauth2
+      repo: gewvtudresden/mosquitto-go-auth-oauth2
       username:
         from_secret: docker_username
       password:
