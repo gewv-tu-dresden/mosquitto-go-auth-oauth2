@@ -130,7 +130,7 @@ func TestGetUserPositiv(t *testing.T) {
 	_, closeServer := createOAuthServer(t, 0, "all")
 	defer closeServer()
 
-	allowed := GetUser("test_superuser", "test_superuser")
+	allowed := GetUser("test_superuser", "test_superuser", "test_client")
 	if !allowed {
 		t.Errorf("Positive GetUser() Response was negative!")
 	}
@@ -140,7 +140,7 @@ func TestGetUserNegativ(t *testing.T) {
 	_, closeServer := createOAuthServer(t, 0, "all")
 	defer closeServer()
 
-	allowed := GetUser("wrong_user", "wrong_password")
+	allowed := GetUser("wrong_user", "wrong_password", "test_client")
 	if allowed {
 		t.Errorf("Negative GetUser() Response was positive!")
 	}
@@ -150,7 +150,7 @@ func TestGetUserWithTokenPositiv(t *testing.T) {
 	_, closeServer := createOAuthServer(t, 0, "all")
 	defer closeServer()
 
-	allowed := GetUser("mock_token_superuser", "")
+	allowed := GetUser("mock_token_superuser", "", "test_client")
 	if !allowed {
 		t.Errorf("Positiv GetUser() Response with token was negative!")
 	}
@@ -165,7 +165,7 @@ func TestGetUserWithTokenNegative(t *testing.T) {
 	_, closeServer := createOAuthServer(t, 0, "all")
 	defer closeServer()
 
-	allowed := GetUser("wrong_token", "")
+	allowed := GetUser("wrong_token", "", "test_client")
 	if allowed {
 		t.Errorf("Negative GetUser() Response with token was positive!")
 	}
@@ -176,7 +176,7 @@ func TestGetSuperuserPositiv(t *testing.T) {
 	_, closeServer := createOAuthServer(t, 0, "all")
 	defer closeServer()
 
-	GetUser("test_superuser", "test_superuser")
+	GetUser("test_superuser", "test_superuser", "test_client")
 	allowed := GetSuperuser("test_superuser")
 	if !allowed {
 		t.Errorf("Positive GetSuperuser() Response was negative!")
@@ -188,7 +188,7 @@ func TestGetSuperuserNegativ(t *testing.T) {
 	_, closeServer := createOAuthServer(t, 0, "all")
 	defer closeServer()
 
-	GetUser("test_normaluser", "test")
+	GetUser("test_normaluser", "test", "test_client")
 	allowed := GetSuperuser("test_normaluser")
 	if allowed {
 		t.Errorf("Negative GetSuperuser() Response was positive!")
@@ -200,7 +200,7 @@ func TestCheckAclPositiv(t *testing.T) {
 	_, closeServer := createOAuthServer(t, 0, "all")
 	defer closeServer()
 
-	GetUser("test_superuser", "test_superuser")
+	GetUser("test_superuser", "test_superuser", "test_client")
 	// test read access
 	allowed := CheckAcl("test_superuser", "/test/topic/read/sensor", "foo", 1)
 	if !allowed {
@@ -225,7 +225,7 @@ func TestCheckAclNegative(t *testing.T) {
 	_, closeServer := createOAuthServer(t, 0, "all")
 	defer closeServer()
 
-	GetUser("test_superuser", "test_superuser")
+	GetUser("test_superuser", "test_superuser", "test_client")
 	// test read access
 	allowed := CheckAcl("test_superuser", "/test/wrong_topic/read/sensor", "foo", 1)
 	if allowed {
@@ -250,7 +250,7 @@ func TestGetUserinfoFromCache(t *testing.T) {
 	_, closeServer := createOAuthServer(t, 10, "all")
 	defer closeServer()
 
-	GetUser("test_superuser", "test_superuser")
+	GetUser("test_superuser", "test_superuser", "test_client")
 
 	// first request should get info from backend
 	GetSuperuser("test_superuser")
@@ -271,7 +271,7 @@ func TestRefreshExpiredAccessTokenCredentials(t *testing.T) {
 		_, closeServer := createOAuthServer(t, 0, "all")
 		defer closeServer()
 
-		GetUser("test_superuser", "test_superuser")
+		GetUser("test_superuser", "test_superuser", "test_client")
 
 		time.Sleep(65 * time.Second)
 
@@ -292,7 +292,7 @@ func TestRefreshExpiredAccessTokenWithoutCrediantials(t *testing.T) {
 		_, closeServer := createOAuthServer(t, 0, "all")
 		defer closeServer()
 
-		GetUser("mock_token_superuser", "")
+		GetUser("mock_token_superuser", "", "test_client")
 
 		time.Sleep(65 * time.Second)
 
@@ -309,7 +309,7 @@ func TestACLWithPatternSubstitution(t *testing.T) {
 	_, closeServer := createOAuthServer(t, 0, "all")
 	defer closeServer()
 
-	GetUser("test_normaluser", "test_normaluser")
+	GetUser("test_normaluser", "test_normaluser", "test_client")
 
 	// test pattern with %u
 	allowed := CheckAcl("test_normaluser", "/test/topic/pattern/username/test_normaluser", "foo", 1)
@@ -331,7 +331,7 @@ func TestSetScopePerOption(t *testing.T) {
 	defer closeServer()
 
 	// set the scope per envs
-	GetUser("test_normaluser", "test_normaluser")
+	GetUser("test_normaluser", "test_normaluser", "test_client")
 
 	scopes := GetScopes()
 	if !Equal(scopes, []string{"scope_1", "scope_2"}) {

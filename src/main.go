@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/iegomez/mosquitto-go-auth/common"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 )
@@ -75,14 +74,44 @@ func isTopicInList(topicList []string, searchedTopic string, username string, cl
 	replacer := strings.NewReplacer("%u", username, "%c", clientid)
 
 	for _, topicFromList := range topicList {
-		if common.TopicsMatch(replacer.Replace(topicFromList), searchedTopic) {
+		if topicsMatch(replacer.Replace(topicFromList), searchedTopic) {
 			return true
 		}
 	}
 	return false
 }
 
-func checkAccessToTopic(topic string, acc int, cache *userState, username string, clientid string) bool {
+func topicsMatch(savedTopic, givenTopic string) bool {
+	return givenTopic == savedTopic || match(strings.Split(savedTopic, "/"), strings.Split(givenTopic, "/"))
+}
+
+func match(route []string, topic []string) bool {
+	if len(route) == 0 {
+		if len(topic) == 0 {
+			return true
+		}
+		return false
+	}
+
+	if len(topic) == 0 {
+		if route[0] == "#" {
+			return true
+		}
+		return false
+	}
+
+	if route[0] == "#" {
+		return true
+	}
+
+	if (route[0] == "+") || (route[0] == topic[0]) {
+		return match(route[1:], topic[1:])
+	}
+
+	return false
+}
+
+func checkAccessToTopic(topic string, acc int32, cache *userState, username string, clientid string) bool {
 	log.Debugf("Check for acl level %d", acc)
 
 	// check read access
@@ -179,7 +208,7 @@ func Init(authOpts map[string]string, logLevel log.Level) error {
 	log.SetLevel(logLevel)
 
 	// Version of the plugin
-	version = "v1.5"
+	version = "v1.6"
 
 	log.Infof("OAuth Plugin " + version + " initialized!")
 	clientID, ok := authOpts["oauth_client_id"]
@@ -233,7 +262,7 @@ func Init(authOpts map[string]string, logLevel log.Level) error {
 	return nil
 }
 
-func GetUser(username, password string) bool {
+func GetUser(username, password, clientid string) bool {
 	// Get token for the credentials and verify the user
 	log.Infof("Checking user with oauth plugin.")
 	if password == "" {
@@ -279,7 +308,7 @@ func GetSuperuser(username string) bool {
 	return cache.superuser
 }
 
-func CheckAcl(username, topic, clientid string, acc int) bool {
+func CheckAcl(username, topic, clientid string, acc int32) bool {
 	// Function that checks if the user has the right to access a address
 	log.Debugf("Checking if user %s is allowed to access topic %s with access %d.", username, topic, acc)
 
