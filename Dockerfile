@@ -2,6 +2,7 @@
 #Change them as per your needs.
 ARG MOSQUITTO_VERSION=2.0.12
 ARG PLUGIN_VERSION=1.8.2
+ARG GOLANG_VERSION=1.17.5
 
 #Use debian:stable-slim as a builder and then copy everything.
 FROM debian:stable-slim as builder
@@ -20,7 +21,7 @@ RUN tar xzvf mosquitto-${MOSQUITTO_VERSION}.tar.gz && rm mosquitto-${MOSQUITTO_V
 RUN cd mosquitto-${MOSQUITTO_VERSION} && make CFLAGS="-Wall -O2 -I/build/lws/include" LDFLAGS="-L/build/lws/lib" WITH_WEBSOCKETS=yes && make install && cd ..
 
 # Use golang:latest as a builder for the Mosquitto Go Auth plugin.
-FROM golang:latest AS go_auth_builder
+FROM golang:${GOLANG_VERSION} AS go_auth_builder
 
 ARG PLUGIN_VERSION
 ENV CGO_CFLAGS="-I/usr/local/include -fPIC"
@@ -45,12 +46,13 @@ RUN wget https://github.com/iegomez/mosquitto-go-auth/archive/refs/tags/${PLUGIN
 #Build the plugin.
 RUN go build -buildmode=c-archive go-auth.go && \
     go build -buildmode=c-shared -o go-auth.so && \
-	go build pw-gen/pw.go
+    go build pw-gen/pw.go
 
 #Get the oauth plugin
 RUN go mod download golang.org/x/oauth2
-COPY src/* oauth_plugin/ 
-RUN export PATH=$PATH:/usr/local/go/bin && go build -buildmode=plugin -o mosquitto-go-auth-oauth2.so oauth_plugin/main.go
+COPY src oauth_plugin 
+WORKDIR  /app/oauth_plugin/
+RUN go build -buildmode=plugin -o mosquitto-go-auth-oauth2.so main.go
 
 #Start from a new image.
 FROM debian:stable-slim
@@ -71,7 +73,7 @@ COPY --from=builder /app/mosquitto/ /mosquitto/
 COPY --from=builder /usr/local/sbin/mosquitto /usr/sbin/mosquitto
 COPY --from=go_auth_builder /app/pw /mosquitto/pw
 COPY --from=go_auth_builder /app/go-auth.so /mosquitto/go-auth.so
-COPY --from=go_auth_builder /app/mosquitto-go-auth-oauth2.so /mosquitto/mosquitto-go-auth-oauth2.so
+COPY --from=go_auth_builder /app/oauth_plugin/mosquitto-go-auth-oauth2.so /mosquitto/mosquitto-go-auth-oauth2.so
 
 #Uncomment to copy your custom confs (change accordingly) directly when building the image.
 #Leave commented if you want to mount a volume for these (see docker-compose.yml).

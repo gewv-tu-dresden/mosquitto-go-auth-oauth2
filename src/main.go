@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"mosquitto-go-auth-oauth2/topics"
 	"net/http"
 	"strconv"
 	"strings"
@@ -74,40 +75,10 @@ func isTopicInList(topicList []string, searchedTopic string, username string, cl
 	replacer := strings.NewReplacer("%u", username, "%c", clientid)
 
 	for _, topicFromList := range topicList {
-		if topicsMatch(replacer.Replace(topicFromList), searchedTopic) {
+		if topics.Match(replacer.Replace(topicFromList), searchedTopic) {
 			return true
 		}
 	}
-	return false
-}
-
-func topicsMatch(savedTopic, givenTopic string) bool {
-	return givenTopic == savedTopic || match(strings.Split(savedTopic, "/"), strings.Split(givenTopic, "/"))
-}
-
-func match(route []string, topic []string) bool {
-	if len(route) == 0 {
-		if len(topic) == 0 {
-			return true
-		}
-		return false
-	}
-
-	if len(topic) == 0 {
-		if route[0] == "#" {
-			return true
-		}
-		return false
-	}
-
-	if route[0] == "#" {
-		return true
-	}
-
-	if (route[0] == "+") || (route[0] == topic[0]) {
-		return match(route[1:], topic[1:])
-	}
-
 	return false
 }
 
@@ -208,7 +179,7 @@ func Init(authOpts map[string]string, logLevel log.Level) error {
 	log.SetLevel(logLevel)
 
 	// Version of the plugin
-	version = "v1.6"
+	version = "v1.7"
 
 	log.Infof("OAuth Plugin " + version + " initialized!")
 	clientID, ok := authOpts["oauth_client_id"]

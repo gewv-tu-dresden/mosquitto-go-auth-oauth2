@@ -4,22 +4,22 @@ name: default
 
 steps:
   - name: Test
-    image: golang:1.13
+    image: golang:1.17
     commands:
       - cd src
-      - go test
+      - go test ./...
 
   - name: Build Container
     image: plugins/docker
     when:
       branch: master
     settings:
-      repo: karltga/mosquitto-go-auth-oauth2
+      repo: gewvtudresden/mosquitto-go-auth-oauth2
       username:
         from_secret: docker_username
       password:
         from_secret: docker_password
       tags:
         - latest
-        - "v1.6"
-        - "v1"
+        - 'v1.7'
+        - 'v1'
