@@ -4,7 +4,7 @@ name: default
 
 steps:
   - name: Test
-    image: golang:1.13
+    image: golang:1.17
     commands:
       - cd src
       - go test ./...
@@ -21,5 +21,5 @@ steps:
         from_secret: docker_password
       tags:
         - latest
-        - 'v1.6'
+        - 'v1.7'
         - 'v1'
