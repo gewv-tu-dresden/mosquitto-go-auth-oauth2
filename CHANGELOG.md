@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.7]
+
+### Changed
+
+- New version of mosquitto
+- New version of the auth-plugin
+
 ## [1.5]
 
 ### Added

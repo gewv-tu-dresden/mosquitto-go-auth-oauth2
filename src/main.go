@@ -179,7 +179,7 @@ func Init(authOpts map[string]string, logLevel log.Level) error {
 	log.SetLevel(logLevel)
 
 	// Version of the plugin
-	version = "v1.7"
+	version = "v1.7.1"
 
 	log.Infof("OAuth Plugin " + version + " initialized!")
 	clientID, ok := authOpts["oauth_client_id"]

@@ -21,5 +21,6 @@ steps:
         from_secret: docker_password
       tags:
         - latest
+        - 'v1.7.1'
         - 'v1.7'
         - 'v1'
