@@ -213,19 +213,27 @@ func Init(authOpts map[string]string, logLevel log.Level) error {
 	if ok {
 		scopesSplitted = strings.Split(strings.Replace(scopes, " ", "", -1), ",")
 
-	} else {
-		scopesSplitted = []string{"all"}
-	}
+		config = oauth2.Config{
+			ClientID:     clientID,
+			ClientSecret: clientSecret,
+			RedirectURL:  "",
+			Scopes:       scopesSplitted,
+			Endpoint: oauth2.Endpoint{
+				TokenURL: tokenURL,
+				AuthURL:  "",
+			},
+		}
 
-	config = oauth2.Config{
-		ClientID:     clientID,
-		ClientSecret: clientSecret,
-		Scopes:       scopesSplitted,
-		RedirectURL:  "",
-		Endpoint: oauth2.Endpoint{
-			TokenURL: tokenURL,
-			AuthURL:  "",
-		},
+	} else {
+		config = oauth2.Config{
+			ClientID:     clientID,
+			ClientSecret: clientSecret,
+			RedirectURL:  "",
+			Endpoint: oauth2.Endpoint{
+				TokenURL: tokenURL,
+				AuthURL:  "",
+			},
+		}
 	}
 
 	userCache = make(map[string]userState)
