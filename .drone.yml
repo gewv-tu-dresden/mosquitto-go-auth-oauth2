@@ -12,7 +12,10 @@ steps:
   - name: Build Container
     image: plugins/docker
     when:
-      branch: master
+      branch:
+        - master
+      event:
+        - push
     settings:
       repo: gewvtudresden/mosquitto-go-auth-oauth2
       username:
