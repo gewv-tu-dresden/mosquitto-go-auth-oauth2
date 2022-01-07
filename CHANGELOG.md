@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.8]
+
+### Changed
+
+- Possible to use empty scope
+
 ## [1.7]
 
 ### Changed
