@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"io/ioutil"
 	"mosquitto-go-auth-oauth2/topics"
 	"net/http"
 	"strconv"
@@ -186,9 +187,22 @@ func Init(authOpts map[string]string, logLevel log.Level) error {
 	if !ok {
 		log.Panic("Got no clientId for oauth plugin.")
 	}
-	clientSecret, ok := authOpts["oauth_client_secret"]
+	clientSecretFile, ok := authOpts["oauth_client_secret_file"]
 	if !ok {
-		log.Panic("Got no client secret for oauth plugin.")
+		log.Info("Got no client secret file for oauth plugin.")
+	}
+	var clientSecret string
+	if clientSecretFile == "" {
+		clientSecret, ok = authOpts["oauth_client_secret"]
+		if !ok {
+			log.Panic("Got no client secret for oauth plugin.")
+		}
+	} else {
+		content, err := ioutil.ReadFile(clientSecretFile)
+		if err != nil {
+			log.Panic("Client secret file for oauth plugin doesn't exist.")
+		}
+		clientSecret = string(content)
 	}
 	tokenURL, ok := authOpts["oauth_token_url"]
 	if !ok {
