@@ -1,25 +1,36 @@
 # Mosquitto Go Auth Plugin for OAuth2
 
-This is a custom backend for the [mosquitto go auth plugin](https://github.com/iegomez/mosquitto-go-auth) that can handle the authentification and authorization with a oauth2 server.
+This is a custom backend for the [mosquitto go auth plugin](https://github.com/iegomez/mosquitto-go-auth) that can handle the authentication and authorization with a oauth2 server.
 
 ## How to use
 
-This plugin use oauth to authenticate and authorize users for a mqtt broker. Unfornatly is it necassary, that the oauth server response with allowed topics for the user. So the authentication is simple and possible with all kinds of oauth servers. But for the acl check, server have to answer with a special json on the userinfo endpoint. This is the structur: 
+This plugin use oauth to authenticate and authorize users for a mqtt broker. Unfortunately is it necessary, that the oauth server response with allowed topics for the user. So the authentication is simple and possible with all kinds of oauth servers. But for the acl check, server have to answer with a special json on the userinfo endpoint. This is the structur: 
 
 ```json
 {
     "mqtt": {
         "topics": {
             "read": ["sensor/+/rx"],
-            "write": ["application/#", "server_log/mqtt_broker/tx"],
+            "write": ["application/#", "server_log/mqtt_broker/tx"]
         },
-        "superuser": false,
-    },
+        "superuser": false
+    }
 }
 
 ```
 
 We use Keycloak and there you can customize your userinfo.
+
+Configuration options are listed below:
+
+| Options              | Description                                                                                         | Mandatory |
+|----------------------|-----------------------------------------------------------------------------------------------------|:---------:|
+| oauth_client_id      | Oauth2 Client id.                                                                                   |     Y     |
+| oauth_client_secret  | Oauth2 Client secret.                                                                               |     Y     |
+| oauth_token_url      | `token` endpoint url of the Oauth2 server.                                                          |     Y     |
+| oauth_userinfo_url   | `userinfo` endpoint url of the Oauth2 server.                                                       |     Y     |
+| oauth_cache_duration | Cache duration (in seconds) before the plugin request user info from Oauth2 server. `0` by default. |     N     |
+| oauth_scopes         | Comma separated list of requested scopes. No scope by default.                                      |     N     |
 
 ## How to test
 

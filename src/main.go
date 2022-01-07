@@ -48,7 +48,7 @@ var userInfoURL string
 var userCache map[string]userState
 var cacheDuration time.Duration
 var version string
-var scopesSplitted []string
+var scopeSplit []string
 
 func getUserInfo(client *http.Client) (*UserInfo, error) {
 	info := UserInfo{}
@@ -211,17 +211,16 @@ func Init(authOpts map[string]string, logLevel log.Level) error {
 	}
 	scopes, ok := authOpts["oauth_scopes"]
 	if ok {
-		scopesSplitted = strings.Split(strings.Replace(scopes, " ", "", -1), ",")
-
+		scopeSplit = strings.Split(strings.Replace(scopes, " ", "", -1), ",")
 	} else {
-		scopesSplitted = []string{"all"}
+		scopeSplit = []string{}
 	}
 
 	config = oauth2.Config{
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
-		Scopes:       scopesSplitted,
 		RedirectURL:  "",
+		Scopes:       scopeSplit,
 		Endpoint: oauth2.Endpoint{
 			TokenURL: tokenURL,
 			AuthURL:  "",
