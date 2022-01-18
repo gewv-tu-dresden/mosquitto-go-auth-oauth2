@@ -23,14 +23,15 @@ We use Keycloak and there you can customize your userinfo.
 
 Configuration options are listed below:
 
-| Options              | Description                                                                                         | Mandatory |
-|----------------------|-----------------------------------------------------------------------------------------------------|:---------:|
-| oauth_client_id      | Oauth2 Client id.                                                                                   |     Y     |
-| oauth_client_secret  | Oauth2 Client secret.                                                                               |     Y     |
-| oauth_token_url      | `token` endpoint url of the Oauth2 server.                                                          |     Y     |
-| oauth_userinfo_url   | `userinfo` endpoint url of the Oauth2 server.                                                       |     Y     |
-| oauth_cache_duration | Cache duration (in seconds) before the plugin request user info from Oauth2 server. `0` by default. |     N     |
-| oauth_scopes         | Comma separated list of requested scopes. No scope by default.                                      |     N     |
+| Options                    | Description                                                                                                                                                        | Mandatory |
+|----------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|:---------:|
+| `oauth_client_id`          | Oauth2 Client id.                                                                                                                                                  |     Y     |
+| `oauth_client_secret`      | Oauth2 Client secret. Either `oauth_client_secret` or `oauth_client_secret_file` must be set. If both are set, `oauth_client_secret_file` is used.                 |     N     |
+| `oauth_client_secret_file` | File containing Oauth2 Client secret. Either `oauth_client_secret` or `oauth_client_secret_file` must be set. If both are set, `oauth_client_secret_file` is used. |     N     |
+| `oauth_token_url`          | `token` endpoint url of the Oauth2 server.                                                                                                                         |     Y     |
+| `oauth_userinfo_url`       | `userinfo` endpoint url of the Oauth2 server.                                                                                                                      |     Y     |
+| `oauth_cache_duration`     | Cache duration (in seconds) before the plugin request user info from Oauth2 server. `0` by default.                                                                |     N     |
+| `oauth_scopes`             | Comma separated list of requested scopes. No scope by default.                                                                                                     |     N     |
 
 ## How to test
 
