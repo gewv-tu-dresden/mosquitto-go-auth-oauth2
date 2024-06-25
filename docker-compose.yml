@@ -1,0 +1,14 @@
+services:
+  mosquitto_oauth2:
+    restart: unless-stopped
+    image: gewvtudresden/mosquitto-go-auth-oauth2:${TAG}
+    hostname: mosquitto_oauth2
+    container_name: mosquitto_oauth2
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+    ports:
+      - ${PORT}:1883
+    volumes:
+      - ./example_conf:/etc/mosquitto

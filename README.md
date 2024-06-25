@@ -1,6 +1,7 @@
 # Mosquitto Go Auth Plugin for OAuth2
 
 This is a custom backend for the [mosquitto go auth plugin](https://github.com/iegomez/mosquitto-go-auth) that can handle the authentication and authorization with a oauth2 server.
+    - It is necessary to check the respective versions of Go and the dependencies
 
 ## How to use
 
@@ -37,3 +38,5 @@ Configuration options are listed below:
 
 The simplest way is to use the delivered dockerfile and build your own image. You can use volumes to import the configurations or copy the files in the images while you build it.
 If you use volumes you have to remove the `COPY` commands from the Dockerfile.
+
+You can use the attached [docker-compose.yml](docker-compose.yml) for deployment.

@@ -1,0 +1,3 @@
+[submodule "mosquitto-go-auth"]
+	path = mosquitto-go-auth
+	url = https://github.com/iegomez/mosquitto-go-auth.git
