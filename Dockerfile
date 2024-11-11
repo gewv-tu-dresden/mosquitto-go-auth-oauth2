@@ -1,11 +1,11 @@
 #Set mosquitto, golang and libwebsocket versions.
 #Change them as per your needs.
-ARG MOSQUITTO_VERSION=2.0.18
+ARG MOSQUITTO_VERSION=2.0.20
 ARG GOLANG_VERSION=1.22.4
-ARG LWS_VERSION=4.2.2
+ARG LWS_VERSION=4.3.3
 
 #Use debian:stable-slim as a builder and then copy everything.
-FROM debian:stable-slim as builder
+FROM debian:stable-slim AS builder
 
 ARG MOSQUITTO_VERSION
 ARG LWS_VERSION
@@ -69,6 +69,9 @@ WORKDIR /app
 COPY --from=builder /usr/local/include/ /usr/local/include/
 
 COPY ./mosquitto-go-auth /app
+
+# Replace the Go module file and the  checksum file
+COPY go_files /app
 
 #Build the basic auth plugin.
 RUN set -ex; \
