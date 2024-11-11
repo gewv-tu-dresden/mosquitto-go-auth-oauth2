@@ -34,9 +34,12 @@ Configuration options are listed below:
 | `oauth_cache_duration`     | Cache duration (in seconds) before the plugin request user info from Oauth2 server. `0` by default.                                                                |     N     |
 | `oauth_scopes`             | Comma separated list of requested scopes. No scope by default.                                                                                                     |     N     |
 
-## How to test
+## How to use
 
 The simplest way is to use the delivered dockerfile and build your own image. You can use volumes to import the configurations or copy the files in the images while you build it.
-If you use volumes you have to remove the `COPY` commands from the Dockerfile.
+- If you use volumes you have to remove the `COPY` commands from the Dockerfile.
+- Due to problems with the golang versions of [mosquitto-go-auth](./mosquitto-go-auth), the environment will be updated with the new golang files in [go_files](go_files).
 
 You can use the attached [docker-compose.yml](docker-compose.yml) for deployment.
+
+Images are also available on dockerhub: [gewvtudresden/mosquitto-go-auth-oauth2](https://hub.docker.com/r/gewvtudresden/mosquitto-go-auth-oauth2)
